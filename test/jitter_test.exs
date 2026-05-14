@@ -62,6 +62,13 @@ defmodule JitterTest do
       assert Jitter.equal(2, base: 100, cap: 30_000, rng: rng) == 400
     end
 
+    test "equal/2 handle odd base upper edge" do
+      rng = fn _min, max -> max end
+
+      result = Jitter.equal(0, base: 99, cap: 30_000, rng: rng)
+      assert result == 99
+    end
+
     test "handles odd base correctly" do
       # base=99, attempt=0: delay=99, half=49.5
       # result must be in [49.5, 99] -> trunc -> [49, 99]
@@ -86,6 +93,18 @@ defmodule JitterTest do
       end
 
       assert Jitter.decorrelated(100, base: 100, cap: 30_000, rng: rng) == 200
+    end
+
+    test "decorrelated/2 with prev_delay < base produces invalid result (bug demo)" do
+      # rng returns max boundary: min + 1.0 * (max - min) = max
+      rng = fn _min, max -> max end
+
+      # prev_delay=10, base=100: rng(100, 30) -> returns 30 (max)
+      # 30 < 100 (base) => contract violation
+      result = Jitter.decorrelated(10, base: 100, cap: 30_000, rng: rng)
+
+      assert result >= 100,
+             "Expected result >= base (100), got #{result}"
     end
 
     test "respect the cap" do

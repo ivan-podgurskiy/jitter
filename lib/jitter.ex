@@ -25,7 +25,7 @@ defmodule Jitter do
       1000
   """
   @spec no_jitter(non_neg_integer(), keyword()) :: pos_integer()
-  def no_jitter(attempt, opts) do
+  def no_jitter(attempt, opts) when is_integer(attempt) and attempt >= 0 do
     base = Keyword.get(opts, :base, @default_base)
     cap = Keyword.get(opts, :cap, @default_cap)
 
@@ -47,7 +47,7 @@ defmodule Jitter do
       1000
   """
   @spec full(non_neg_integer(), keyword()) :: pos_integer()
-  def full(attempt, opts) do
+  def full(attempt, opts) when is_integer(attempt) and attempt >= 0 do
     base = Keyword.get(opts, :base, @default_base)
     cap = Keyword.get(opts, :cap, @default_cap)
     rng = Keyword.get(opts, :rng, &default_rng/2)
@@ -72,14 +72,14 @@ defmodule Jitter do
       1000
   """
   @spec equal(non_neg_integer(), keyword()) :: pos_integer()
-  def equal(attempt, opts) do
+  def equal(attempt, opts) when is_integer(attempt) and attempt >= 0 do
     base = Keyword.get(opts, :base, @default_base)
     cap = Keyword.get(opts, :cap, @default_cap)
     rng = Keyword.get(opts, :rng, &default_rng/2)
 
-    tmp = capped_delay(cap, base, attempt) / 2
+    half = capped_delay(cap, base, attempt) / 2
 
-    trunc(tmp + rng.(0, tmp))
+    trunc(half + rng.(0, half))
   end
 
   @doc """
@@ -97,12 +97,12 @@ defmodule Jitter do
       30000
   """
   @spec decorrelated(pos_integer(), keyword()) :: pos_integer()
-  def decorrelated(prev_delay, opts) do
+  def decorrelated(prev_delay, opts) when is_integer(prev_delay) and prev_delay > 0 do
     base = Keyword.get(opts, :base, @default_base)
     cap = Keyword.get(opts, :cap, @default_cap)
     rng = Keyword.get(opts, :rng, &default_rng/2)
 
-    trunc(min(cap, rng.(base, prev_delay * 3)))
+    trunc(min(cap, rng.(base, max(base, prev_delay * 3))))
   end
 
   defp default_rng(min, max), do: min + :rand.uniform() * (max - min)
