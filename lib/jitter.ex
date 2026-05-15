@@ -130,6 +130,28 @@ defmodule Jitter do
   end
 
   @doc """
+  Returns an infinite lazy stream of equal jitter delays.
+
+  Each element is calculated from the next retry attempt. The delay is always
+  between half of the capped exponential delay and the full capped exponential delay.
+
+  Use `Enum.take/2` or `Stream.take/2` to consume a finite number of values.
+
+  ## Examples
+
+      iex> Jitter.equal_stream(base: 100, cap: 1000, rng: fn _min, max -> max end) |> Enum.take(5)
+      [100, 200, 400, 800, 1000]
+
+      iex> Jitter.equal_stream(base: 100, cap: 1000, rng: fn min, _max -> min end) |> Enum.take(5)
+      [50, 100, 200, 400, 500]
+  """
+  @spec equal_stream(keyword()) :: Enumerable.t()
+  def equal_stream(opts \\ []) do
+    Stream.iterate(0, &(&1 + 1))
+    |> Stream.map(&equal(&1, opts))
+  end
+
+  @doc """
   Returns an infinite lazy stream of decorrelated jitter delays.
 
   Unlike `full_stream/1` and `equal_stream/1`, this stream keeps the previous delay
@@ -142,12 +164,6 @@ defmodule Jitter do
       iex> Jitter.decorrelated_stream(base: 100, cap: 1000, rng: fn _min, max -> max end) |> Enum.take(5)
       [300, 900, 1000, 1000, 1000]
   """
-  @spec equal_stream(keyword()) :: Enumerable.t()
-  def equal_stream(opts \\ []) do
-    Stream.iterate(0, &(&1 + 1))
-    |> Stream.map(&equal(&1, opts))
-  end
-
   @spec decorrelated_stream(keyword()) :: Enumerable.t()
   def decorrelated_stream(opts \\ []) do
     base = Keyword.get(opts, :base, @default_base)
@@ -157,4 +173,5 @@ defmodule Jitter do
       {next_delay, next_delay}
     end)
   end
+
 end
