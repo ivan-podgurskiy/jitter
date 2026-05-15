@@ -51,6 +51,7 @@ defmodule Jitter.MixProject do
 
   defp package do
     [
+      files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG.md),
       licenses: ["MIT"],
       links: %{
         "GitHub" => "https://github.com/ivan-podgurskiy/jitter"
