@@ -174,4 +174,64 @@ defmodule Jitter do
     end)
   end
 
+  @doc """
+  Applies Full Jitter to an existing delay stream.
+
+  Each delay in the input enumerable is capped at `:cap` and then randomized
+  uniformly in `[0, capped]`. Compatible with `Retry.DelayStreams.exponential_backoff/0`:
+
+      import Retry.DelayStreams
+      exponential_backoff() |> Jitter.apply_full(cap: 30_000) |> Stream.take(5)
+
+  ## Examples
+
+      iex> [100, 200, 400, 800, 2000]
+      ...> |> Jitter.apply_full(cap: 1000, rng: fn _min, max -> max end)
+      ...> |> Enum.to_list()
+      [100, 200, 400, 800, 1000]
+  """
+  @spec apply_full(Enumerable.t(), keyword()) :: Enumerable.t()
+  def apply_full(delays, opts) do
+    cap = Keyword.fetch!(opts, :cap)
+    rng = Keyword.get(opts, :rng, &default_rng/2)
+
+    Stream.map(delays, fn delay ->
+      capped = min(cap, delay)
+      trunc(rng.(0, capped))
+    end)
+  end
+
+  @doc """
+  Applies Equal Jitter to an existing delay stream.
+
+  Each delay in the input enumerable is capped at `:cap` and then split in half:
+  the result is the half plus a uniform random value in `[0, half]`. Compatible
+  with `Retry.DelayStreams.exponential_backoff/0`:
+
+      import Retry.DelayStreams
+      exponential_backoff() |> Jitter.apply_equal(cap: 30_000) |> Stream.take(5)
+
+  ## Examples
+
+      iex> [100, 200, 400, 800, 2000]
+      ...> |> Jitter.apply_equal(cap: 1000, rng: fn _min, max -> max end)
+      ...> |> Enum.to_list()
+      [100, 200, 400, 800, 1000]
+
+      iex> [100, 200, 400, 800, 2000]
+      ...> |> Jitter.apply_equal(cap: 1000, rng: fn min, _max -> min end)
+      ...> |> Enum.to_list()
+      [50, 100, 200, 400, 500]
+  """
+  @spec apply_equal(Enumerable.t(), keyword()) :: Enumerable.t()
+  def apply_equal(delays, opts) do
+    cap = Keyword.fetch!(opts, :cap)
+    rng = Keyword.get(opts, :rng, &default_rng/2)
+
+    Stream.map(delays, fn delay ->
+      capped = min(cap, delay)
+      half = capped / 2
+      trunc(half + rng.(0, half))
+    end)
+  end
 end
