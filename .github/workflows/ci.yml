@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: '1.18'
+            otp: '27'
+          - elixir: '1.18'
+            otp: '26'
+          - elixir: '1.18'
+            otp: '25'
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: deps
+          key: ${{ runner.os }}-otp${{ matrix.otp }}-elixir${{ matrix.elixir }}-deps-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp${{ matrix.otp }}-elixir${{ matrix.elixir }}-deps-
+
+      - name: Cache _build
+        uses: actions/cache@v4
+        with:
+          path: _build
+          key: ${{ runner.os }}-otp${{ matrix.otp }}-elixir${{ matrix.elixir }}-build-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp${{ matrix.otp }}-elixir${{ matrix.elixir }}-build-
+
+      - run: mix deps.get
+      - run: mix deps.compile
+      - run: mix compile --warnings-as-errors
+      - run: mix format --check-formatted
+      - run: mix test
