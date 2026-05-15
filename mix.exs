@@ -1,10 +1,13 @@
 defmodule Jitter.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @source_url "https://github.com/ivan-podgurskiy/jitter"
+
   def project do
     [
       app: :jitter,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -15,7 +18,7 @@ defmodule Jitter.MixProject do
 
       # Docs
       name: "Jitter",
-      source_url: "https://github.com/ivan-podgurskiy/jitter",
+      source_url: @source_url,
       docs: docs(),
 
       # Dialyzer
@@ -53,15 +56,15 @@ defmodule Jitter.MixProject do
     [
       files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG.md),
       licenses: ["MIT"],
-      links: %{
-        "GitHub" => "https://github.com/ivan-podgurskiy/jitter"
-      }
+      links: %{"GitHub" => @source_url}
     ]
   end
 
   defp docs do
     [
       main: "Jitter",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
       extras: ["README.md", "CHANGELOG.md"]
     ]
   end

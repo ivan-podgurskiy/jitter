@@ -161,4 +161,4 @@ Notation: `cap_delay = min(cap, base · 2^attempt)`.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/ivan-podgurskiy/jitter/blob/main/LICENSE).
