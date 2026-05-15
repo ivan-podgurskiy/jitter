@@ -95,20 +95,69 @@ defmodule JitterTest do
       assert Jitter.decorrelated(100, base: 100, cap: 30_000, rng: rng) == 200
     end
 
-    test "decorrelated/2 with prev_delay < base produces invalid result (bug demo)" do
-      # rng returns max boundary: min + 1.0 * (max - min) = max
-      rng = fn _min, max -> max end
+    test "decorrelated/2 keeps rng max at least base when prev_delay * 3 is below base" do
+      rng = fn min, max ->
+        assert min == 100
+        assert max == 100
+        max
+      end
 
-      # prev_delay=10, base=100: rng(100, 30) -> returns 30 (max)
-      # 30 < 100 (base) => contract violation
-      result = Jitter.decorrelated(10, base: 100, cap: 30_000, rng: rng)
-
-      assert result >= 100,
-             "Expected result >= base (100), got #{result}"
+      assert Jitter.decorrelated(10, base: 100, cap: 30_000, rng: rng) == 100
     end
 
     test "respect the cap" do
       assert Jitter.decorrelated(1234, base: 100, cap: 30_000) in 0..30_000
+    end
+  end
+
+  describe "full_stream/1" do
+    test "full_stream/1 produces values within cap" do
+      stream = Jitter.full_stream(base: 100, cap: 1000)
+      values = stream |> Enum.take(10)
+
+      assert length(values) == 10
+      assert Enum.all?(values, &(&1 >= 0 and &1 <= 1000))
+    end
+
+    test "full_stream/1 produces increasing attempts until cap" do
+      stream = Jitter.full_stream(base: 100, cap: 1000, rng: fn _min, max -> max end)
+      values = stream |> Enum.take(10)
+
+      assert values == [100, 200, 400, 800, 1000, 1000, 1000, 1000, 1000, 1000]
+    end
+  end
+
+  describe "equal_stream/1" do
+    test "equal_stream/1 produces values within cap" do
+      stream = Jitter.equal_stream(base: 100, cap: 1000)
+      values = stream |> Enum.take(10)
+
+      assert length(values) == 10
+      assert Enum.all?(values, &(&1 >= 0 and &1 <= 1000))
+    end
+
+    test "equal_stream/1 produces increasing attempts until cap" do
+      stream = Jitter.equal_stream(base: 100, cap: 1000, rng: fn _min, max -> max end)
+      values = stream |> Enum.take(10)
+
+      assert values == [100, 200, 400, 800, 1000, 1000, 1000, 1000, 1000, 1000]
+    end
+
+    test "equal_stream/1 produces half when RNG is min" do
+      stream = Jitter.equal_stream(base: 100, cap: 1000, rng: fn min, _max -> min end)
+      values = stream |> Enum.take(10)
+
+      assert values == [50, 100, 200, 400, 500, 500, 500, 500, 500, 500]
+    end
+  end
+
+  describe "decorrelated_stream/1" do
+    test "feeds previous result into the next step" do
+      values =
+        Jitter.decorrelated_stream(base: 100, cap: 1000, rng: fn _min, max -> max end)
+        |> Enum.take(5)
+
+      assert values == [300, 900, 1000, 1000, 1000]
     end
   end
 end
