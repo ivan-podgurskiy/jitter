@@ -16,7 +16,14 @@ defmodule Jitter.MixProject do
       # Docs
       name: "Jitter",
       source_url: "https://github.com/ivan-podgurskiy/jitter",
-      docs: docs()
+      docs: docs(),
+
+      # Dialyzer
+      dialyzer: [
+        plt_add_apps: [:ex_unit, :mix],
+        plt_local_path: "priv/plts/local.plt",
+        plt_core_path: "priv/plts/core.plt"
+      ]
     ]
   end
 
@@ -31,7 +38,9 @@ defmodule Jitter.MixProject do
   defp deps do
     [
       {:stream_data, "~> 1.0", only: [:dev, :test]},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
